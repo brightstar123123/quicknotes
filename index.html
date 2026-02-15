@@ -15,6 +15,7 @@
 
   <header class="header">
     <div id="userPanel" class="user-panel" style="display:none;">
+        <button id="themeToggle">🌙</button>
       <img id="avatar" class="avatar">
       <div id="username"></div>
     </div>
@@ -135,6 +136,23 @@ onAuthStateChanged(auth, user => {
   });
 });
 
+const toggle = document.getElementById("themeToggle");
+
+// load saved theme
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "dark") {
+  document.body.classList.add("dark");
+  toggle.textContent = "☀️";
+}
+
+toggle.onclick = () => {
+  document.body.classList.toggle("dark");
+
+  const isDark = document.body.classList.contains("dark");
+
+  toggle.textContent = isDark ? "☀️" : "🌙";
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+};
 </script>
 
 
