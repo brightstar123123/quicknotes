@@ -33,6 +33,7 @@ textarea {
 <textarea id="note" placeholder="Start typing..."></textarea>
 <div class="info" id="status"></div>
 
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -42,6 +43,13 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -58,30 +66,62 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+const provider = new GoogleAuthProvider();
 
 const noteEl = document.getElementById("note");
 const status = document.getElementById("status");
 
-const noteRef = doc(db, "notes", "sharedNote");
+/* Login button */
+const loginBtn = document.createElement("button");
+loginBtn.textContent = "Sign in";
+document.body.prepend(loginBtn);
 
-/* Live sync listener */
-onSnapshot(noteRef, snap => {
-  if (snap.exists()) {
-    noteEl.value = snap.data().text || "";
+const logoutBtn = document.createElement("button");
+logoutBtn.textContent = "Sign out";
+logoutBtn.style.display = "none";
+document.body.prepend(logoutBtn);
+
+/* Auth flow */
+loginBtn.onclick = () => signInWithPopup(auth, provider);
+logoutBtn.onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    noteEl.disabled = true;
+    status.textContent = "Please sign in";
+    loginBtn.style.display = "inline";
+    logoutBtn.style.display = "none";
+    return;
   }
-});
 
-/* Autosave */
-noteEl.addEventListener("input", async () => {
-  await setDoc(noteRef, {
-    text: noteEl.value,
-    updated: new Date().toLocaleString()
+  loginBtn.style.display = "none";
+  logoutBtn.style.display = "inline";
+  noteEl.disabled = false;
+
+  const noteRef = doc(db, "notes", user.uid);
+
+  onSnapshot(noteRef, snap => {
+    if (snap.exists()) {
+      const cloudText = snap.data().text || "";
+      if (noteEl.value !== cloudText) {
+        noteEl.value = cloudText;
+      }
+    }
   });
 
-  status.textContent = "Saved ✔ " + new Date().toLocaleTimeString();
+  noteEl.addEventListener("input", async () => {
+    await setDoc(noteRef, {
+      text: noteEl.value,
+      updated: new Date().toISOString()
+    });
+
+    status.textContent = "Saved ✔";
+  });
 });
 </script>
 
+
 </body>
 </html>
-
