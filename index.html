@@ -29,6 +29,12 @@ textarea {
 
 <body>
 
+<div id="userPanel" style="display:none; margin-bottom:10px;">
+  <img id="avatar" width="32" style="border-radius:50%; vertical-align:middle;">
+  <span id="username"></span>
+</div>
+
+
 <h2>Cloud Autosave Notepad</h2>
 <textarea id="note" placeholder="Start typing..."></textarea>
 <div class="info" id="status"></div>
@@ -87,14 +93,25 @@ document.body.prepend(logoutBtn);
 loginBtn.onclick = () => signInWithPopup(auth, provider);
 logoutBtn.onclick = () => signOut(auth);
 
+const userPanel = document.getElementById("userPanel");
+const avatar = document.getElementById("avatar");
+const username = document.getElementById("username");
+
 onAuthStateChanged(auth, user => {
   if (!user) {
     noteEl.disabled = true;
     status.textContent = "Please sign in";
+
+    userPanel.style.display = "none";
     loginBtn.style.display = "inline";
     logoutBtn.style.display = "none";
     return;
   }
+
+  /* Show user info */
+  userPanel.style.display = "block";
+  avatar.src = user.photoURL;
+  username.textContent = `${user.displayName} (${user.email})`;
 
   loginBtn.style.display = "none";
   logoutBtn.style.display = "inline";
@@ -120,6 +137,7 @@ onAuthStateChanged(auth, user => {
     status.textContent = "Saved ✔";
   });
 });
+
 </script>
 
 
