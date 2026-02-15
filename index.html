@@ -11,28 +11,43 @@
 
 <body>
 
-    <div class="app">
+<div id="loginView" class="login-screen">
+
+  <div class="login-card">
+    <h1>Cloud Notepad</h1>
+    <p>Secure synced notes across all devices</p>
+
+    <button id="googleLogin" class="login-btn google">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg">
+      Sign in with Google
+    </button>
+
+    <button id="microsoftLogin" class="login-btn microsoft">
+      <img src="https://www.svgrepo.com/show/448239/microsoft.svg">
+      Sign in with Microsoft
+    </button>
+
+  </div>
+
+</div>
+
+<div id="appView" class="app" style="display:none;">
 
   <header class="header">
-    <div id="userPanel" class="user-panel" style="display:none;">
-        <button id="themeToggle">🌙</button>
+    <div id="userPanel" class="user-panel">
       <img id="avatar" class="avatar">
-      <div id="username"></div>
+      <span id="username"></span>
     </div>
 
-    <div class="auth-buttons">
-      <!-- buttons are injected by JS -->
+    <div>
+      <button id="themeToggle">🌙</button>
+      <button id="logoutBtn">Sign out</button>
     </div>
   </header>
 
   <main class="card">
-    <h2>Cloud Notepad</h2>
-
     <textarea id="note" placeholder="Start typing..."></textarea>
-
-    <div class="status-bar">
-      <span id="status"></span>
-    </div>
+    <div class="status-bar" id="status"></div>
   </main>
 
 </div>
@@ -67,6 +82,11 @@ const firebaseConfig = {
   measurementId: "G-34FYTLCP7D"
 };
 
+import { OAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const googleProvider = new GoogleAuthProvider();
+const microsoftProvider = new OAuthProvider("microsoft.com");
+
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -78,14 +98,21 @@ const noteEl = document.getElementById("note");
 const status = document.getElementById("status");
 
 /* Login button */
-const loginBtn = document.createElement("button");
-loginBtn.textContent = "Sign in";
-document.body.prepend(loginBtn);
+document.getElementById("googleLogin").onclick =
+  () => signInWithPopup(auth, googleProvider);
 
+document.getElementById("microsoftLogin").onclick =
+  () => signInWithPopup(auth, microsoftProvider);
+
+/*
 const logoutBtn = document.createElement("button");
 logoutBtn.textContent = "Sign out";
 logoutBtn.style.display = "none";
 document.body.prepend(logoutBtn);
+*/
+
+document.getElementById("logoutBtn").onclick =
+  () => signOut(auth);
 
 /* Auth flow */
 loginBtn.onclick = () => signInWithPopup(auth, provider);
@@ -95,34 +122,28 @@ const userPanel = document.getElementById("userPanel");
 const avatar = document.getElementById("avatar");
 const username = document.getElementById("username");
 
-onAuthStateChanged(auth, user => {
-  if (!user) {
-    noteEl.disabled = true;
-    status.textContent = "Please sign in";
+const loginView = document.getElementById("loginView");
+const appView = document.getElementById("appView");
 
-    userPanel.style.display = "none";
-    loginBtn.style.display = "inline";
-    logoutBtn.style.display = "none";
+onAuthStateChanged(auth, user => {
+
+  if (!user) {
+    loginView.style.display = "flex";
+    appView.style.display = "none";
     return;
   }
 
-  /* Show user info */
-  userPanel.style.display = "block";
-  avatar.src = user.photoURL;
-  username.textContent = `${user.displayName} (${user.email})`;
+  loginView.style.display = "none";
+  appView.style.display = "block";
 
-  loginBtn.style.display = "none";
-  logoutBtn.style.display = "inline";
-  noteEl.disabled = false;
+  avatar.src = user.photoURL;
+  username.textContent = user.displayName;
 
   const noteRef = doc(db, "notes", user.uid);
 
   onSnapshot(noteRef, snap => {
     if (snap.exists()) {
-      const cloudText = snap.data().text || "";
-      if (noteEl.value !== cloudText) {
-        noteEl.value = cloudText;
-      }
+      noteEl.value = snap.data().text || "";
     }
   });
 
@@ -135,6 +156,7 @@ onAuthStateChanged(auth, user => {
     status.textContent = "Saved ✔";
   });
 });
+
 
 const toggle = document.getElementById("themeToggle");
 
