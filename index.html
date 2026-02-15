@@ -104,19 +104,12 @@ document.getElementById("googleLogin").onclick =
 document.getElementById("microsoftLogin").onclick =
   () => signInWithPopup(auth, microsoftProvider);
 
-/*
-const logoutBtn = document.createElement("button");
-logoutBtn.textContent = "Sign out";
-logoutBtn.style.display = "none";
-document.body.prepend(logoutBtn);
-*/
+
 
 document.getElementById("logoutBtn").onclick =
   () => signOut(auth);
 
-/* Auth flow */
-loginBtn.onclick = () => signInWithPopup(auth, provider);
-logoutBtn.onclick = () => signOut(auth);
+
 
 const userPanel = document.getElementById("userPanel");
 const avatar = document.getElementById("avatar");
